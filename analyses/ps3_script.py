@@ -92,7 +92,7 @@ preprocessor = ColumnTransformer(
         ("num", Pipeline([
             ("scaler", StandardScaler()),
             ("spline", SplineTransformer(knots="quantile", n_knots=4, degree=3, include_bias=False))
-        ]), numeric_cols)
+        ]), numeric_cols),
         ("cat", OneHotEncoder(sparse_output=False, drop="first"), categoricals),
     ]
 )
