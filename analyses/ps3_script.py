@@ -1,4 +1,11 @@
 # %%
+import sys
+import os
+
+# Add the root directory to the Python import path
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(root_dir)
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,22 +18,22 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, SplineTransformer, StandardScaler
 
-from ps3.data import create_sample_split, load_transform
+from ps3.data import create_sample_split ,load_transform
 
 # %%
 # load data
 df = load_transform()
+
 
 # %%
 # Train benchmark tweedie model. This is entirely based on the glum tutorial.
 weight = df["Exposure"].values
 df["PurePremium"] = df["ClaimAmountCut"] / df["Exposure"]
 y = df["PurePremium"]
-# TODO: Why do you think, we divide by exposure here to arrive at our outcome variable?
+# We divide by Exposure to normalise the claim amounts relative to the level exposure. This, in turn, provides a standardised measure of risk per unit measure of exposure. 
 
 
-# TODO: use your create_sample_split function here
-# df = create_sample_split(...)
+df = create_sample_split(df,id_column="IDpol")
 train = np.where(df["sample"] == "train")
 test = np.where(df["sample"] == "test")
 df_train = df.iloc[train].copy()
