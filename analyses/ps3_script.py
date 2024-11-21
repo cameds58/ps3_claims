@@ -20,13 +20,13 @@ df = load_transform()
 # %%
 # Train benchmark tweedie model. This is entirely based on the glum tutorial.
 weight = df["Exposure"].values
+# We divide by Exposure to normalise the claim amounts relative to the level exposure. 
+# This, in turn, provides a standardised measure of risk per unit measure of exposure.
 df["PurePremium"] = df["ClaimAmountCut"] / df["Exposure"]
 y = df["PurePremium"]
-# TODO: Why do you think, we divide by exposure here to arrive at our outcome variable?
-
 
 # TODO: use your create_sample_split function here
-# df = create_sample_split(...)
+df = create_sample_split(df,id_column="IDpol")
 train = np.where(df["sample"] == "train")
 test = np.where(df["sample"] == "test")
 df_train = df.iloc[train].copy()
@@ -89,12 +89,20 @@ numeric_cols = ["BonusMalus", "Density"]
 preprocessor = ColumnTransformer(
     transformers=[
         # TODO: Add numeric transforms here
+        ("num", Pipeline([
+            ("scaler", StandardScaler()),
+            ("spline", SplineTransformer(knots="quantile", n_knots=4, degree=3, include_bias=False))
+        ]), numeric_cols)
         ("cat", OneHotEncoder(sparse_output=False, drop="first"), categoricals),
     ]
 )
 preprocessor.set_output(transform="pandas")
 model_pipeline = Pipeline(
     # TODO: Define pipeline steps here
+    [
+        ("preprocessor", preprocessor),
+        ("glm", GeneralizedLinearRegressor(family=TweedieDist, l1_ratio=1, fit_intercept=True))
+    ]
 )
 
 # let's have a look at the pipeline
