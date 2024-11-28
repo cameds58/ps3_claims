@@ -23,3 +23,6 @@ dependencies:
   - glum
   - lightgbm
   - scikit-learn
+  # PS4 Ex4
+  - dalex
+  - nbformat
