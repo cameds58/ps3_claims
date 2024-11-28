@@ -394,4 +394,58 @@ metrics_unconstrained = evaluate_predictions(y_test_t, y_pred_unconstrained, sam
 print("Constrained LGBM Model Metrics:\n", metrics_constrained)
 print("\nUnconstrained LGBM Model Metrics:\n", metrics_unconstrained)
 
+# PS4 EX3
+# Predictions for unconstrained model
+y_pred_constrained = cv_constrained.best_estimator_.predict(X_test_t)
+y_pred_unconstrained = model_pipeline.fit(X_train_t, y_train_t).predict(X_test_t)
+
+# Evaluate metrics
+metrics_constrained = evaluate_predictions(y_test_t, y_pred_constrained, sample_weight=w_test_t)
+metrics_unconstrained = evaluate_predictions(y_test_t, y_pred_unconstrained, sample_weight=w_test_t)
+
+# Print results
+print("Constrained LGBM Model Metrics:\n", metrics_constrained)
+print("\nUnconstrained LGBM Model Metrics:\n", metrics_unconstrained)
+
+
+
+
+# %%
+# PS4 EX4
+from dalex import Explainer
+
+# Create DALEX Explainers
+explainer_unconstrained = Explainer(
+    model_pipeline.fit(X_train_t, y_train_t), 
+    X_test_t, 
+    y_test_t, 
+    label="Unconstrained LGBM"
+)
+
+explainer_constrained = Explainer(
+    cv_constrained.best_estimator_, 
+    X_test_t, 
+    y_test_t, 
+    label="Constrained LGBM"
+)
+
+# Generate PDPs
+pdp_unconstrained = explainer_unconstrained.model_profile(type="partial")
+pdp_constrained = explainer_constrained.model_profile(type="partial")
+
+# Plot PDPs for all features
+pdp_unconstrained.plot(title="Partial Dependence Plot: Unconstrained LGBM")
+
+pdp_constrained.plot(title="Partial Dependence Plot: Constrained LGBM")
+
+# Focus on specific features (e.g., "BonusMalus" and "Density")
+pdp_unconstrained_specific = explainer_unconstrained.model_profile(type="partial", variables=["BonusMalus", "Density"])
+pdp_constrained_specific = explainer_constrained.model_profile(type="partial", variables=["BonusMalus", "Density"])
+
+# Plot PDPs for specific features
+pdp_unconstrained_specific.plot(title="PDP (Specific Features): Unconstrained LGBM")
+
+pdp_constrained_specific.plot(title="PDP (Specific Features): Constrained LGBM")
+
+
 # %%
