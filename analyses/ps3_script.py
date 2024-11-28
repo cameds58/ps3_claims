@@ -320,10 +320,21 @@ plt.show()
 monotone_constraints = [0] * len(categoricals) + [1, 0]  # 1 for BonusMalus, 0 for Density and categoricals
 
 constrained_lgbm = Pipeline(
-    [   
+    [
         ("lgbm", LGBMRegressor(objective="tweedie", monotone_constraints=monotone_constraints))
     ]
 )
+
+cv_constrained = GridSearchCV(
+    constrained_lgbm,
+    {
+        "lgbm__learning_rate": [0.01, 0.02, 0.03, 0.04, 0.05, 0.1],
+        "lgbm__n_estimators": [50, 100, 150, 200],
+    },
+    verbose=2,
+)
+
+cv_constrained.fit(X_train_t, y_train_t, lgbm__sample_weight=w_train_t)
 
 df_test["pp_t_lgbm_constrained"] = cv_constrained.best_estimator_.predict(X_test_t)
 df_train["pp_t_lgbm_constrained"] = cv_constrained.best_estimator_.predict(X_train_t)
