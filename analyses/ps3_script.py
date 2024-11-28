@@ -288,4 +288,58 @@ plt.plot()
 # %% [markdown]
 # ## Exercise 4 Starts
 
+# %%
+# Create a plot of the average claims per BonusMalus group weighted by exposure.
+average_claims = df.groupby("BonusMalus").apply(lambda x: np.average(x["PurePremium"], weights=x["Exposure"]))
+plt.figure(figsize=(12, 6))
+average_claims.plot(kind='bar')
+plt.xlabel('BonusMalus')
+plt.ylabel('Average Claims')
+plt.title('Average Claims per BonusMalus Group Weighted by Exposure')
+plt.xticks(rotation=45)
+plt.locator_params(axis='x', nbins=12)
+plt.show()
+
+# %% [markdown]
+# ### What will/could happen if we do not include a monotonicity constraint?
+# We can see from the above plot that we do not have exposure in every BonusMalus group. It is likely that there might be edge cases in which the monotonicity breaks. Serveral issues could arise if we do not include a monotonicity constraint in the model.
+# 
+# **Non-intuitive Results:** The model might produce results that do not align with domain knowledge or intuition. For example, the price decreases for customers with lower bonus malus score. 
+# 
+# **Overfitting**: Without constraints, the model might overfit the training data by capturing noise, leading to poor generalization on new data.
+# 
+# **Interpretability**: Monotonicity constraints can make the model more interpretable, as they enforce a consistent relationship between input and output variables.
+# 
+# In summary, including a monotonicity constraint helps ensure that the model behaves in a predictable and interpretable manner, aligning with domain knowledge and improving generalization.
+
+# %%
+# Create a new model pipeline or estimator called constrained_lgbm. Introduce an increasing monotonicity constrained for BonusMalus. 
+# Note: We have to provide a list of the same length as our features with 0s everywhere except for BonusMalus where we put a 1. 
+# See: https://lightgbm.readthedocs.io/en/latest/Parameters.html
+
+monotone_constraints = [0] * len(categoricals) + [1, 0]  # 1 for BonusMalus, 0 for Density and categoricals
+
+constrained_lgbm = Pipeline(
+    [   
+        ("lgbm", LGBMRegressor(objective="tweedie", monotone_constraints=monotone_constraints))
+    ]
+)
+
+df_test["pp_t_lgbm_constrained"] = cv_constrained.best_estimator_.predict(X_test_t)
+df_train["pp_t_lgbm_constrained"] = cv_constrained.best_estimator_.predict(X_train_t)
+
+print(
+    "training loss constrained_lgbm:  {}".format(
+        TweedieDist.deviance(y_train_t, df_train["pp_t_constrained_lgbm"], sample_weight=w_train_t)
+        / np.sum(w_train_t)
+    )
+)
+
+print(
+    "testing loss constrained_lgbm:  {}".format(
+        TweedieDist.deviance(y_test_t, df_test["pp_t_constrained_lgbm"], sample_weight=w_test_t)
+        / np.sum(w_test_t)
+    )
+)
+
 
