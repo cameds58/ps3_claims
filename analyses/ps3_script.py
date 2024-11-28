@@ -12,6 +12,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, SplineTransformer, StandardScaler
 import lightgbm as lgb
+from dalex import Explainer
 
 from ps3.data import create_sample_split, load_transform
 from ps3.evaluation import evaluate_predictions
@@ -342,14 +343,14 @@ df_train["pp_t_lgbm_constrained"] = cv_constrained.best_estimator_.predict(X_tra
 
 print(
     "training loss constrained_lgbm:  {}".format(
-        TweedieDist.deviance(y_train_t, df_train["pp_t_constrained_lgbm"], sample_weight=w_train_t)
+        TweedieDist.deviance(y_train_t, df_train["pp_t_lgbm_constrained"], sample_weight=w_train_t)
         / np.sum(w_train_t)
     )
 )
 
 print(
     "testing loss constrained_lgbm:  {}".format(
-        TweedieDist.deviance(y_test_t, df_test["pp_t_constrained_lgbm"], sample_weight=w_test_t)
+        TweedieDist.deviance(y_test_t, df_test["pp_t_lgbm_constrained"], sample_weight=w_test_t)
         / np.sum(w_test_t)
     )
 )
@@ -367,14 +368,14 @@ best_lgbm.named_steps['lgbm'].fit(
     sample_weight=w_train_t,
     eval_set=[(X_train_t, y_train_t), (X_test_t, y_test_t)],
     eval_names=["train", "test"],
-    eval_metric="poisson",  # Scoring metric
+    eval_metric="tweedie",  # Scoring metric 
     callbacks=[lgb.record_evaluation(eval_results)]  # Record results for plotting
 )
 
 # Plot the learning curve
-lgb.plot_metric(eval_results, metric="poisson")
+lgb.plot_metric(eval_results, metric="tweedie")
 plt.title("Learning Curve for LGBMRegressor")
-plt.ylabel("Poisson Deviance")
+plt.ylabel("Tweedie Deviance")
 plt.xlabel("Boosting Iterations")
 plt.show()
 
@@ -412,7 +413,6 @@ print("\nUnconstrained LGBM Model Metrics:\n", metrics_unconstrained)
 
 # %%
 # PS4 EX4
-from dalex import Explainer
 
 # Create DALEX Explainers
 explainer_unconstrained = Explainer(
@@ -449,3 +449,31 @@ pdp_constrained_specific.plot(title="PDP (Specific Features): Constrained LGBM")
 
 
 # %%
+#Ex5
+#create explainer for original GLM
+explainer_glm = Explainer(
+    model=t_glm1,
+    data=X_test_t,  
+    y=y_test_t,     
+    label="Original GLM"
+)
+
+observation = X_test_t.iloc[[0]]  
+
+# get SHAP
+shap_constrained = explainer_constrained.predict_parts(
+    new_observation=observation,
+    type="shap"  
+)
+
+shap_glm = explainer_glm.predict_parts(
+    new_observation=observation,
+    type="shap"  
+)
+
+# Plot 
+print("Constrained LGBM Prediction Decomposition:")
+shap_constrained.plot()
+print("Initial GLM Prediction Decomposition:")
+shap_glm.plot()
+
