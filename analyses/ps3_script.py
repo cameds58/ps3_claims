@@ -11,9 +11,10 @@ from sklearn.metrics import auc, mean_absolute_error
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, SplineTransformer, StandardScaler
+import lightgbm as lgb
 
 from ps3.data import create_sample_split, load_transform
-
+from ps3.evaluation import evaluate_predictions
 
 # %%
 # load data
@@ -355,7 +356,6 @@ print(
 
 # %%
 # PS4 EX2
-import lightgbm as lgb
 # Re-fit the best constrained LGBMRegressor
 best_lgbm = cv_constrained.best_estimator_  # Best model from cross-validation
 eval_results = {}  # Dictionary to store evaluation metrics
@@ -382,8 +382,6 @@ plt.show()
 
 # %%
 # PS4 EX3
-from ps3.evaluation import evaluate_predictions
-
 # Predictions for unconstrained model
 y_pred_constrained = cv_constrained.best_estimator_.predict(X_test_t)
 y_pred_unconstrained = model_pipeline.fit(X_train_t, y_train_t).predict(X_test_t)
