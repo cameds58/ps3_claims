@@ -353,4 +353,47 @@ print(
     )
 )
 
+# %%
+# PS4 EX2
+import lightgbm as lgb
+# Re-fit the best constrained LGBMRegressor
+best_lgbm = cv_constrained.best_estimator_  # Best model from cross-validation
+eval_results = {}  # Dictionary to store evaluation metrics
 
+# Fit the model with evaluation sets
+best_lgbm.named_steps['lgbm'].fit(
+    X_train_t,
+    y_train_t,
+    sample_weight=w_train_t,
+    eval_set=[(X_train_t, y_train_t), (X_test_t, y_test_t)],
+    eval_names=["train", "test"],
+    eval_metric="poisson",  # Scoring metric
+    callbacks=[lgb.record_evaluation(eval_results)]  # Record results for plotting
+)
+
+# Plot the learning curve
+lgb.plot_metric(eval_results, metric="poisson")
+plt.title("Learning Curve for LGBMRegressor")
+plt.ylabel("Poisson Deviance")
+plt.xlabel("Boosting Iterations")
+plt.show()
+
+
+
+# %%
+# PS4 EX3
+from ps3.evaluation import evaluate_predictions
+
+# Predictions for unconstrained model
+y_pred_constrained = cv_constrained.best_estimator_.predict(X_test_t)
+y_pred_unconstrained = model_pipeline.fit(X_train_t, y_train_t).predict(X_test_t)
+
+# Evaluate metrics
+metrics_constrained = evaluate_predictions(y_test_t, y_pred_constrained, sample_weight=w_test_t)
+metrics_unconstrained = evaluate_predictions(y_test_t, y_pred_unconstrained, sample_weight=w_test_t)
+
+# Print results
+print("Constrained LGBM Model Metrics:\n", metrics_constrained)
+print("\nUnconstrained LGBM Model Metrics:\n", metrics_unconstrained)
+
+# %%
